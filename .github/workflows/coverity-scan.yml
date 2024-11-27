@@ -1,0 +1,41 @@
+name: Coverity Scan
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  coverity:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Coverity Tool
+      run: |
+        wget https://scan.coverity.com/download/linux64 \
+          --post-data "token=${{ secrets.COVERITY_TOKEN }}&project=${{ github.repository }}" \
+          -O coverity_tool.tgz
+        tar -xvzf coverity_tool.tgz
+        mv cov-analysis-linux64-* cov-analysis
+        export PATH=$PWD/cov-analysis/bin:$PATH
+
+    - name: Build with Coverity
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cov-build --dir cov-int make
+
+    - name: Upload to Coverity Scan
+      run: |
+        tar czvf goatcppvuln.tgz cov-int
+        curl --form token=${{ secrets.COVERITY_TOKEN }} \
+             --form email=miguelm@defensepoint.com \
+             --form file=@goatcppvuln.tgz \
+             --form version="1.0" \
+             --form description="Automated Coverity Scan" \
+             https://scan.coverity.com/builds?project=${{ github.repository }}
