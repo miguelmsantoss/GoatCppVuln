@@ -14,14 +14,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install Coverity Tool
+    - name: Download and Install Coverity Tool
       run: |
         wget https://scan.coverity.com/download/linux64 \
           --post-data "token=${{ secrets.COVERITY_TOKEN }}&project=${{ github.repository }}" \
           -O coverity_tool.tgz
-        tar -xvzf coverity_tool.tgz
-        mv cov-analysis-linux64-* cov-analysis
-        export PATH=$PWD/cov-analysis/bin:$PATH
+        mkdir coverity_tool
+        tar -xvzf coverity_tool.tgz -C coverity_tool --strip-components=1
+        export PATH=$PWD/coverity_tool/bin:$PATH
+        echo "Coverity Tool installed successfully"
 
     - name: Build with Coverity
       run: |
