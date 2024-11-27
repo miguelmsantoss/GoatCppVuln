@@ -16,3 +16,8 @@ void raceCondition() {
     t2.join();
     std::cout << "Shared Variable: " << sharedVariable << std::endl;
 }
+
+int main() {
+    raceCondition();
+    return 0;
+}

@@ -6,3 +6,8 @@ void bufferOverflow() {
     std::strcpy(buffer, "This is a very long string that will overflow");
     std::cout << buffer << std::endl;
 }
+
+int main() {
+    bufferOverflow();
+    return 0;
+}
