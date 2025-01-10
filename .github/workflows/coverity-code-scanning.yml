@@ -1,0 +1,41 @@
+name: Coverity Code Scanning
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  coverity-code-scanning:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download and Install Coverity Tool
+        run: |
+          wget https://scan.coverity.com/download/linux64 \
+            --post-data "token=${{ secrets.COVERITY_TOKEN }}&project=${{ github.repository }}" \
+            -O coverity_tool.tgz
+          mkdir coverity_tool
+          tar -xvzf coverity_tool.tgz -C coverity_tool --strip-components=1
+          export PATH=$PWD/coverity_tool/bin:$PATH
+          echo "Coverity Tool installed successfully"
+
+      - name: Build with Coverity
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          ../coverity_tool/bin/cov-build --dir ../cov-int make
+
+      - name: Generate SARIF Report
+        run: |
+          ../coverity_tool/bin/cov-analyze --dir ../cov-int --output-format sarif --output-file coverity-results.sarif
+
+      - name: Upload SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: coverity-results.sarif
