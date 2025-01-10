@@ -24,6 +24,11 @@ jobs:
           export PATH=$PWD/coverity_tool/bin:$PATH
           echo "Coverity Tool installed successfully"
 
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
       - name: Build with Coverity
         run: |
           mkdir build
@@ -31,9 +36,17 @@ jobs:
           cmake ..
           ../coverity_tool/bin/cov-build --dir ../cov-int make
 
-      - name: Generate SARIF Report
+      - name: Generate JSON Output
         run: |
-          ../coverity_tool/bin/cov-analyze --dir ../cov-int --output-format sarif --output-file coverity-results.sarif
+          ../coverity_tool/bin/cov-format-errors --dir ../cov-int --json-output-v10 coverity-results.json
+
+      - name: Convert JSON to SARIF
+        run: |
+          node ../coverity_tool/SARIF/cov-format-sarif-for-github.js \
+          --inputFile coverity-results.json \
+          --outputFile coverity-results.sarif \
+          --repoName ${{ github.repository }} \
+          --checkoutPath ${{ github.repository }} $GITHUB_WORKSPACE ${{ github.sha }}
 
       - name: Upload SARIF to GitHub
         uses: github/codeql-action/upload-sarif@v2
